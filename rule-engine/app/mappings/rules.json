@@ -1,0 +1,14 @@
+{
+  "NO_HELMET": {
+    "minimum_confidence": 0.80,
+    "suggestion": "NO_HELMET_REVIEW"
+  },
+  "TRIPLE_RIDING": {
+    "minimum_confidence": 0.80,
+    "suggestion": "TRIPLE_RIDING_REVIEW"
+  },
+  "OVER_SPEEDING": {
+    "minimum_confidence": 0.80,
+    "suggestion": "OVER_SPEEDING_REVIEW"
+  }
+}
