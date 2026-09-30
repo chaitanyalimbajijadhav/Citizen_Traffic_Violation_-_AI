@@ -1,0 +1,13 @@
+{
+  "ai_input": {
+    "violation": "NO_HELMET",
+    "confidence": 0.91,
+    "bbox": [100, 120, 300, 400],
+    "needs_review": false
+  },
+  "rule_engine_output": {
+    "violation": "NO_HELMET",
+    "suggestion": "NO_HELMET_REVIEW",
+    "needs_review": false
+  }
+}

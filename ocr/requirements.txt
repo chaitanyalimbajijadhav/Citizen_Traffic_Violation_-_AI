@@ -1,0 +1,6 @@
+paddleocr>=2.7.0
+paddlepaddle>=2.6.0
+opencv-python>=4.9.0
+numpy>=1.26.0
+pydantic>=2.7.0
+pytest>=8.0.0
