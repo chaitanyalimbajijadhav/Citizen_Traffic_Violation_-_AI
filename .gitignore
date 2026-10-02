@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# YOLO / ML
+runs/
+*.pt
+*.onnx
+*.engine
+
+# Datasets
+train/
+valid/
+test/
+datasets/
+dataset/
+
+# Environment / secrets
+.env
+
+# IDE
+.vscode/
+.idea/
