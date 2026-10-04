@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This module provides the Sprint 1 foundation for number plate OCR. It validates the image, runs a basic preprocessing step, extracts plate text, normalizes the result, and returns review metadata without making a legal decision.
+This module provides the current number plate OCR foundation for the project. It validates the image, runs lightweight preprocessing, extracts text through the existing PaddleOCR integration, normalizes the detected plate text, applies a conservative Indian plate structure check, and marks suspicious or low-confidence results for review.
 
 ## Technologies
 
@@ -24,30 +24,16 @@ source .venv/bin/activate  # Linux/macOS
 pip install -r ocr/requirements.txt
 ```
 
-## Environment setup
-
-Use a clean virtual environment. Install the OCR dependencies before running inference. This project does not ship model weights or private plate images.
-
 ## PaddleOCR setup
 
-PaddleOCR is optional for the Sprint 1 code path, but the intended usage is:
+The project keeps the existing PaddleOCR integration. The OCR adapter attempts to import PaddleOCR and falls back safely when it is unavailable or fails.
 
 ```python
 from paddleocr import PaddleOCR
 ocr = PaddleOCR(use_angle_cls=False, lang="en", show_log=False)
 ```
 
-If the dependency is not available in the current environment, the module degrades gracefully and returns a review-required result instead of crashing.
-
-## Run instructions
-
-From the repository root:
-
-```bash
-python ocr/main.py "path/to/plate_image.jpg"
-```
-
-Expected OCR output:
+## Output contract
 
 ```json
 {
@@ -58,25 +44,74 @@ Expected OCR output:
 }
 ```
 
+## Sprint 2 improvements
+
+- Normalization removes spacing, hyphen, and punctuation noise while preserving the original OCR text in `raw_text`.
+- Lowercase and mixed-format OCR strings are normalized deterministically to uppercase alphanumeric text.
+- A conservative Indian plate check validates shapes such as `MH13AB1234` and `MH12CD5678`.
+- Suspicious or structurally invalid plate formats trigger `needs_review` without changing the original raw OCR result.
+- Low-confidence OCR results trigger review using the configured threshold.
+- Empty, malformed, unreadable, or exception-based OCR results return a predictable safe response instead of crashing.
+
+## Normalization behavior
+
+Examples:
+
+- `mh 13-ab 1234` -> `MH13AB1234`
+- ` MH-13 AB 1234 ` -> `MH13AB1234`
+- `mh13 ab 1234` -> `MH13AB1234`
+
+The logic intentionally does not perform risky substitutions such as `O -> 0` or `I -> 1` because those can corrupt valid OCR output.
+
+## Structural validation
+
+The module applies a lightweight structural rule for common Indian plates:
+
+```python
+^[A-Z]{2}\d{2}[A-Z]{2}\d{4}$
+```
+
+This is a structural check only and does not claim legal validity, RTO verification, or ownership verification.
+
+## Confidence and review handling
+
+- `confidence` is preserved from the OCR result.
+- `needs_review` becomes `true` when confidence falls below the review threshold.
+- `needs_review` also becomes `true` when the OCR result is empty, malformed, suspicious, or already flagged by the OCR layer.
+- If no usable text is returned, the module returns:
+
+```json
+{
+  "raw_text": "",
+  "normalized_text": "",
+  "confidence": 0.0,
+  "needs_review": true
+}
+```
+
 ## Testing
 
 ```bash
 python -m pytest ocr/tests/test_ocr.py -q
+python -m pytest
 ```
 
 ## Known limitations
 
-- Sprint 1 focuses on a lightweight OCR foundation, not production-grade plate recognition.
-- PaddleOCR inference depends on installed dependencies and model availability in the environment.
-- This module does not validate the legal status of a plate or final RTO decision.
+- This module remains a decision-support OCR component rather than a production-grade plate recognition system.
+- PaddleOCR availability and model runtime behavior still depend on the local environment.
+- Structural validation is intentionally conservative and does not verify legal or administrative status.
+- The module does not make final challan determination or enforcement decisions.
 
-## Sprint 1 status
+## Status
 
 - Image validation: implemented
-- Basic preprocessing: implemented
-- PaddleOCR integration hook: implemented
-- Raw text extraction: implemented
-- Plate normalization: implemented
-- Confidence + review flags: implemented
-- Sample fixture: included under ocr/samples
-- Tests: included under ocr/tests
+- Preprocessing: implemented
+- PaddleOCR adapter: implemented
+- Raw OCR extraction: implemented
+- Normalization: implemented
+- Structural plate validation: implemented
+- Confidence review threshold: implemented
+- Safe failure handling: implemented
+- Tests: included under `ocr/tests`
+- Sample output: included under `ocr/samples`

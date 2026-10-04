@@ -67,3 +67,40 @@ def test_ai_result_already_needs_review_is_preserved():
 
     assert result["needs_review"] is True
     assert result["reason"] == "AI flag requires review"
+
+
+def test_empty_violation_is_handled_safely():
+    result = evaluate_violation({
+        "violation": "",
+        "confidence": 0.91,
+        "bbox": [100, 120, 300, 400],
+        "needs_review": False,
+    })
+
+    assert result["suggestion"] is None
+    assert result["needs_review"] is True
+    assert result["reason"] == "No configured rule mapping"
+
+
+def test_invalid_confidence_is_review_required():
+    result = evaluate_violation({
+        "violation": "NO_HELMET",
+        "confidence": 1.8,
+        "bbox": [100, 120, 300, 400],
+        "needs_review": False,
+    })
+
+    assert result["suggestion"] == "NO_HELMET_REVIEW"
+    assert result["needs_review"] is True
+    assert result["reason"] == "Invalid confidence"
+
+
+def test_output_structure_contains_required_fields():
+    result = evaluate_violation({
+        "violation": "NO_HELMET",
+        "confidence": 0.91,
+        "bbox": [100, 120, 300, 400],
+        "needs_review": False,
+    })
+
+    assert set(result.keys()) >= {"violation", "suggestion", "needs_review"}
