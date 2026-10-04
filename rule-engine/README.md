@@ -62,7 +62,7 @@ Example:
 ```json
 {
   "NO_HELMET": {
-    "minimum_confidence": 0.80,
+    "minimum_confidence": 0.8,
     "suggestion": "NO_HELMET_REVIEW"
   }
 }

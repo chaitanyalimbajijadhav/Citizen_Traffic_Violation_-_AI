@@ -58,7 +58,7 @@ ocr = PaddleOCR(use_angle_cls=False, lang="en", show_log=False)
 Examples:
 
 - `mh 13-ab 1234` -> `MH13AB1234`
-- ` MH-13 AB 1234 ` -> `MH13AB1234`
+- `MH-13 AB 1234` -> `MH13AB1234`
 - `mh13 ab 1234` -> `MH13AB1234`
 
 The logic intentionally does not perform risky substitutions such as `O -> 0` or `I -> 1` because those can corrupt valid OCR output.
