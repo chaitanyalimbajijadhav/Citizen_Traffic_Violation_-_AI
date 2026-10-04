@@ -36,6 +36,34 @@ def test_normal_ocr_output(tmp_path):
 def test_text_normalization():
     assert normalize_plate_text("mh 13-ab 1234") == "MH13AB1234"
     assert normalize_plate_text("  MH-13 AB 1234 ") == "MH13AB1234"
+    assert normalize_plate_text("mh13 ab 1234") == "MH13AB1234"
+    assert normalize_plate_text("mh13-ab-1234") == "MH13AB1234"
+
+
+def test_valid_indian_plate_format(tmp_path):
+    image_path = tmp_path / "valid_plate.png"
+    _make_test_image(image_path)
+
+    result = process_plate_image(
+        str(image_path),
+        ocr_engine=lambda _path: [{"text": "MH13AB1234", "confidence": 0.94}],
+    )
+
+    assert result["normalized_text"] == "MH13AB1234"
+    assert result["needs_review"] is False
+
+
+def test_suspicious_plate_format(tmp_path):
+    image_path = tmp_path / "suspicious_plate.png"
+    _make_test_image(image_path)
+
+    result = process_plate_image(
+        str(image_path),
+        ocr_engine=lambda _path: [{"text": "MH13ABC", "confidence": 0.94}],
+    )
+
+    assert result["normalized_text"] == "MH13ABC"
+    assert result["needs_review"] is True
 
 
 def test_empty_ocr_result(tmp_path):
@@ -59,6 +87,33 @@ def test_low_confidence(tmp_path):
     )
 
     assert result["confidence"] == pytest.approx(0.20)
+    assert result["needs_review"] is True
+
+
+def test_malformed_ocr_result(tmp_path):
+    image_path = tmp_path / "malformed.png"
+    _make_test_image(image_path)
+
+    result = process_plate_image(str(image_path), ocr_engine=lambda _path: {"not": "expected"})
+
+    assert result["raw_text"] == ""
+    assert result["normalized_text"] == ""
+    assert result["confidence"] == pytest.approx(0.0)
+    assert result["needs_review"] is True
+
+
+def test_ocr_exception(tmp_path):
+    image_path = tmp_path / "ocr_exception.png"
+    _make_test_image(image_path)
+
+    def boom(_path):
+        raise RuntimeError("OCR failed")
+
+    result = process_plate_image(str(image_path), ocr_engine=boom)
+
+    assert result["raw_text"] == ""
+    assert result["normalized_text"] == ""
+    assert result["confidence"] == pytest.approx(0.0)
     assert result["needs_review"] is True
 
 

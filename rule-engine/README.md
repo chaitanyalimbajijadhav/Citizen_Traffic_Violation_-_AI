@@ -2,11 +2,11 @@
 
 ## Purpose
 
-The rule engine is a lightweight Sprint 1 decision-support component. It receives a structured detection result, checks a configurable mapping, and returns a safe suggestion plus a review flag. It is not a legal final decision engine.
+The rule engine is a lightweight decision-support component. It receives a structured violation result, checks a configurable rule mapping, and returns a safe suggestion plus review metadata without making final legal or administrative decisions.
 
 ## Input contract
 
-The engine expects a detection payload like this:
+The engine accepts the existing payload shape:
 
 ```json
 {
@@ -17,16 +17,11 @@ The engine expects a detection payload like this:
 }
 ```
 
-Required fields:
-
-- violation
-- confidence
-- bbox
-- needs_review
+The engine is backward compatible with the Sprint 1 contract and safely handles missing fields or malformed values.
 
 ## Output contract
 
-Example success response:
+Successful response:
 
 ```json
 {
@@ -36,20 +31,31 @@ Example success response:
 }
 ```
 
-Example unknown violation response:
+Review response:
 
 ```json
 {
-  "violation": "UNKNOWN",
+  "violation": "NO_HELMET",
+  "suggestion": "NO_HELMET_REVIEW",
+  "needs_review": true,
+  "reason": "Low confidence"
+}
+```
+
+Unknown violation response:
+
+```json
+{
+  "violation": "UNKNOWN_VIOLATION",
   "suggestion": null,
   "needs_review": true,
   "reason": "No configured rule mapping"
 }
 ```
 
-## Rule mapping concept
+## Rule configuration
 
-Mappings are configured in `rule-engine/app/mappings/rules.json`. This keeps the rule decision externalized from the Python logic and allows project-level adjustments without changing business code.
+Mappings remain externalized in `rule-engine/app/mappings/rules.json` so the logic can be adjusted without changing the Python engine code.
 
 Example:
 
@@ -62,34 +68,51 @@ Example:
 }
 ```
 
-## How to run tests
+The engine uses at least:
+
+- `violation`
+- `minimum_confidence`
+- `suggestion`
+
+## Sprint 2 improvements
+
+- Preserves the existing input and output contracts.
+- Keeps `needs_review` set to `true` if the AI result was already flagged.
+- Returns a safe review response for missing or empty violations.
+- Rejects invalid confidence values outside the expected range.
+- Uses the configured minimum confidence threshold for low-confidence review.
+- Handles unknown or unmapped violations without crashing.
+
+## Review behavior
+
+The engine marks a result for review when:
+
+- the input already has `needs_review: true`
+- the violation is empty or unknown
+- the configured confidence threshold is not met
+- the confidence value is malformed or outside the expected range
+
+## Testing
 
 ```bash
 python -m pytest rule-engine/tests/test_engine.py -q
+python -m pytest
 ```
 
-## Unknown violation behavior
+## Limitations
 
-Unknown or missing mappings do not crash the engine. Instead, the engine safely returns:
+- This is decision-support logic only.
+- It does not verify legal status, vehicle registration validity, RTO records, or owner details.
+- It does not make final challan or enforcement decisions.
+- It relies on the configured rule mapping for all supported violations.
 
-- suggestion: null
-- needs_review: true
-- reason: "No configured rule mapping"
+## Status
 
-## needs_review behavior
-
-The engine forces review when:
-
-- the input is already flagged by AI (`needs_review` is true)
-- the violation is unknown or unmapped
-- the confidence is below the configured threshold
-
-## Sprint 1 status
-
-- input schema: implemented
-- output schema: implemented
-- configurable rule mapping: implemented
-- low-confidence handling: implemented
-- unknown mapping safety: implemented
-- tests: included under rule-engine/tests
-- sample fixture: included under rule-engine/samples
+- Input contract: implemented
+- Output contract: implemented
+- Configurable rule mapping: implemented
+- Confidence threshold handling: implemented
+- Need-review preservation: implemented
+- Unknown/malformed input safety: implemented
+- Tests: included under `rule-engine/tests`
+- Sample fixtures: included under `rule-engine/samples`
