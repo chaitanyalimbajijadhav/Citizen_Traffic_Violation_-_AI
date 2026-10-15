@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.auth import router as auth_router
 from app.api.health import router as health_router
@@ -17,6 +18,16 @@ app = FastAPI(
     title="AI Smart Traffic Violation Backend",
     version="1.0.0",
     description="FastAPI backend for citizen traffic-violation reporting and RTO review.",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://127.0.0.1:8080",
+        "http://localhost:8080",
+    ],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 app.include_router(health_router, prefix="/api", tags=["Health"])

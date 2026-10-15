@@ -58,6 +58,7 @@ pytest
 
 ## Sprint 2 API additions
 
+- `POST /api/auth/register`
 - `POST /api/evidence/reports/{report_id}`
 - `POST /api/processing/reports/{report_id}/ai-job`
 - `GET /api/processing/reports/{report_id}/status`
@@ -66,3 +67,17 @@ pytest
 - `POST /api/reviews/reports/{report_id}`
 
 AI and OCR endpoints are integration contracts. They do not implement YOLO/OCR internally.
+
+## Citizen registration
+
+`POST /api/auth/register` accepts JSON with required `name`, `email`, and `password`
+fields. The name must contain 1–100 characters, the email must be a valid
+address of at most 100 characters, and the password must contain 8–100
+characters. Email is normalized to lowercase and stored in the existing unique
+`users.username` column because the current user schema has no separate email
+column; users log in with that email as their username. The endpoint returns
+`201 Created` with only `id`, `name`, `email`, and `role`. Duplicate email
+registration returns `409 Conflict`.
+
+No database migration is needed: registration uses the existing `users`
+columns and username uniqueness constraint.
